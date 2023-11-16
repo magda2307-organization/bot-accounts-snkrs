@@ -8,6 +8,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import traceback
 
+
 # CONFIG dictionary for constants and configuration values
 CONFIG = {
     'CONFIG_FILE': 'CONFIG.xlsx',
