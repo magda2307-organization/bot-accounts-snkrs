@@ -1,5 +1,7 @@
 import requests
 import pandas as pd
+from datetime import datetime, timedelta
+import os
 
 def clean_name_surname(name_data):
     """
@@ -27,7 +29,7 @@ def generate_fake_details(api_url, country, name_format, num):
     - num (int): Number of fake details to generate.
 
     Returns:
-    - pd.DataFrame: DataFrame containing fake details (name, surname, email, gender).
+    - pd.DataFrame: DataFrame containing fake details (name, surname, email, gender, birthdate).
     """
     fake_details_list = []
 
@@ -46,6 +48,9 @@ def generate_fake_details(api_url, country, name_format, num):
                 cleaned_name, cleaned_surname = clean_name_surname(name_data)
                 number = idx + (num_per_gender if gender == 'female' else 0)
 
+                # Generate birthdate older than 21 years
+                birthdate = (datetime.now() - timedelta(days=365.25 * 21)).strftime('%d.%m.%Y')
+
                 email = f"{cleaned_name.lower()}_{cleaned_surname.lower()}_{number}@johnsmith2222.sbs"
                 
                 # Append the generated details to the list
@@ -54,9 +59,10 @@ def generate_fake_details(api_url, country, name_format, num):
                     "surname": cleaned_surname,
                     "email": email,
                     "gender": gender,
+                    "birthdate": birthdate,
                 })
 
-                print(f"Fake details created: {cleaned_name} {cleaned_surname} ({email}), Gender: {gender}")
+                print(f"Fake details created: {cleaned_name} {cleaned_surname} ({email}), Gender: {gender}, Birthdate: {birthdate}")
 
     print(f"Total amount of fake data created: {len(fake_details_list)}")
 
@@ -64,4 +70,3 @@ def generate_fake_details(api_url, country, name_format, num):
     fake_details_df = pd.DataFrame(fake_details_list)
 
     return fake_details_df
-

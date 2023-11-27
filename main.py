@@ -9,7 +9,7 @@ from email.mime.multipart import MIMEMultipart
 import traceback
 import os
 import pandas as pd
-from fake_data_generator import generate_fake_details
+from generate_fake_details import generate_fake_details
 
 config_file_path = 'config.yaml'
 
@@ -44,6 +44,10 @@ def create_dummy_config(config_file_path):
         'PROXY_FILE': 'proxies.txt',  # Added the proxy file key
         'DATA_FILE': 'data.yaml',
         'PROCESS_STARTING_PAGE': 'https://example.com',  # Added the starting page for processing items
+        'API_URL': "http://api.name-fake.com",
+        'COUNTRY': "english-united-states",
+        'NAME_FORMAT': "{name}_{surname}_{number}",
+        'NUMBER_OF_ACCOUNTS_TO_BE_CREATED': 10,
     }
 
     with open(config_file_path, 'w') as yaml_file:
@@ -68,22 +72,24 @@ def get_proxy_for_item(item, proxies, last_used_proxy_index):
 
 def initialize(config):
     try:
+        # Read configuration from file and add to the config
         config_data = read_config(config_file_path)
-        required_keys = {'Username', 'Password', 'Email'}
-        if not set(config_data.keys()).issuperset(required_keys):
-            raise ValueError("Invalid keys in the configuration file.")
-
         config.update(config_data)
-
         # Read proxies from file and add to the config
         proxy_file_path = config_data.get('PROXY_FILE', 'proxies.txt')
         proxies = read_proxies_from_file(proxy_file_path)
         config['PROXIES'] = proxies
+        # Generate fake details
+        number_of_accounts = config.get('NUMBER_OF_ACCOUNTS_TO_BE_CREATED', 10)
+        fake_details_df = generate_fake_details(config['API_URL'], config['COUNTRY'], config['NAME_FORMAT'], number_of_accounts)
+        print(f"{number_of_accounts} fake accounts created")
 
     except Exception as e:
         raise ValueError(f"Error reading configuration file: {e}")
 
     print(f"Configuration file loaded: {config_file_path}")
+
+
 
 def feed_queue(config):
     data_file_path = config.get('DATA_FILE', 'data.yaml')  # Use 'data.yaml' by default
