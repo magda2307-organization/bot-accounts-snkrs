@@ -7,7 +7,8 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import traceback
-
+import os
+import xlsxwriter
 
 # CONFIG dictionary for constants and configuration values
 CONFIG = {
