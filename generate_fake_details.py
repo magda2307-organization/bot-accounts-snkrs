@@ -1,5 +1,4 @@
 import requests
-import pandas as pd
 from datetime import datetime, timedelta
 import random
 import logging
@@ -15,7 +14,6 @@ DATE_FORMAT = '%d.%m.%Y'
 
 def get_name_data(api_url, num_per_request):
     api_endpoint = f"https://{api_url}/"
-    print(api_endpoint)
     headers = {'Accept': 'application/json'}  # Adding the Accept header
 
     try:
@@ -35,8 +33,8 @@ def get_name_data(api_url, num_per_request):
 
 
 def clean_name_surname(name_data):
-    cleaned_name = name_data.get('name', '')
-    cleaned_surname = name_data.get('maiden_name', '')
+    cleaned_name = name_data.get('name', '').replace(" ", "_")
+    cleaned_surname = name_data.get('maiden_name', '').replace(" ", "_")
 
     return cleaned_name, cleaned_surname
 
