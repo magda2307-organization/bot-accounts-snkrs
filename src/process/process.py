@@ -6,7 +6,7 @@ from src.proxy.proxy_utils import get_proxy_for_item
 from password_generator import generate_random_password
 
 def feed_queue(config):
-    data_file_path = config.get('DATA_FILE', 'config/config.yaml')
+    data_file_path = config.get('DATA_FILE', 'config/data.yaml')
 
     if not os.path.isfile(data_file_path):
         raise ValueError(f"Data file not found. Please create a valid {data_file_path} file.")

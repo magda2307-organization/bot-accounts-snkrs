@@ -14,7 +14,7 @@ SMTP_SERVER: smtp.gmail.com
 SMTP_PORT: 587
 EXAMPLE_PAGE_URL: https://example.com
 PROXY_FILE: config/proxies.txt
-DATA_FILE: data.yaml
+DATA_FILE: config/data.yaml
 PROCESS_STARTING_PAGE: https://example.com
 API_URL: http://api.name-fake.com
 COUNTRY: english-united-states

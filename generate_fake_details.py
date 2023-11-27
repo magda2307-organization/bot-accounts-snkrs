@@ -1,69 +1,63 @@
 import requests
 import pandas as pd
 from datetime import datetime, timedelta
-import json
 import random
+import logging
 
-def get_name_data(api_url, country, gender, num_per_gender):
-    api_endpoint = f"{api_url}/{country}/{gender}/"
-    response = requests.get(api_endpoint, params={'number': num_per_gender})
+LOG_FILENAME = 'fake_data_generator.log'
+
+# Configure logging
+logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG)
+
+API_URL = 'api.namefake.com'  # Update the API_URL
+DATE_FORMAT = '%d.%m.%Y'
+
+
+def get_name_data(api_url, num_per_request):
+    api_endpoint = f"https://{api_url}/"
+    print(api_endpoint)
+    headers = {'Accept': 'application/json'}  # Adding the Accept header
 
     try:
-        print(response.text)
-        response.raise_for_status()  # Raise an HTTPError for bad responses
+        response = requests.get(api_endpoint, params={'number': num_per_request}, headers=headers)
+        response.raise_for_status()
+        name_data = response.json()
 
-        try:
-            name_data = response.json()
-            if isinstance(name_data, list):
-                return name_data
-            else:
-                return [name_data]
-        except json.JSONDecodeError as e:
-            print(f"Error decoding API response as JSON: {e}")
+        # Check if the response contains the expected fields
+        if 'name' in name_data:
+            return [name_data]
+        else:
+            logging.warning(f"Unexpected API response: {name_data}")
             return []
-    except requests.exceptions.HTTPError as errh:
-        print(f"HTTP Error: {errh}")
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Error in get_name_data: {e}")
         return []
-    except requests.exceptions.ConnectionError as errc:
-        print(f"Error Connecting: {errc}")
-        return []
-    except requests.exceptions.Timeout as errt:
-        print(f"Timeout Error: {errt}")
-        return []
-    except requests.exceptions.RequestException as err:
-        print(f"Request Error: {err}")
-        return []
+
 
 def clean_name_surname(name_data):
-    if 'name' in name_data:
-        name_parts = name_data['name'].split()
-        cleaned_name = ''.join(filter(str.isalpha, name_parts[0]))
-        cleaned_surname = ''.join(filter(str.isalpha, name_parts[1]))
-        return cleaned_name.capitalize(), cleaned_surname.capitalize()
-    else:
-        print("Error: 'name' not found in name_data.")
-        return None, None
+    cleaned_name = name_data.get('name', '')
+    cleaned_surname = name_data.get('maiden_name', '')
 
-def generate_fake_details(api_url, country, num, email_domain):
+    return cleaned_name, cleaned_surname
+
+
+def generate_fake_details(api_url, num, email_domain):
     fake_details_list = []
 
-    num_per_gender = num // 2
+    num_per_request = num  # You may adjust this based on your needs
 
     for _ in range(num):
-        # Randomly select gender for each entry
-        gender = random.choice(['male', 'female'])
-        name_data_list = get_name_data(api_url, country, gender, 1)
+        name_data_list = get_name_data(api_url, num_per_request)
 
         for name_data in name_data_list:
             cleaned_name, cleaned_surname = clean_name_surname(name_data)
 
-            if cleaned_name is None or cleaned_surname is None:
-                continue  # Skip this entry if cleaning fails
+            if not cleaned_name or not cleaned_surname:
+                continue
 
             random_days = random.randint(int(365.25 * 21), int(365.25 * (datetime.now().year - 1988)))
-            birthdate = (datetime.now() - timedelta(days=random_days)).strftime('%d.%m.%Y')
+            birthdate = (datetime.now() - timedelta(days=random_days)).strftime(DATE_FORMAT)
 
-            # Introduce additional randomness in the email
             random_number1 = random.randint(1, 999)
             random_number2 = random.randint(1, 999)
             email = f"{cleaned_name.lower()}_{random_number1}_{cleaned_surname.lower()}_{random_number2}@{email_domain}"
@@ -72,16 +66,29 @@ def generate_fake_details(api_url, country, num, email_domain):
                 "name": cleaned_name,
                 "surname": cleaned_surname,
                 "email": email,
-                "gender": gender,
                 "birthdate": birthdate,
             })
 
-            print(f"Fake details created: {cleaned_name} {cleaned_surname} ({email}), Gender: {gender}, Birthdate: {birthdate}")
+            logging.info(f"Fake details created: {cleaned_name} {cleaned_surname} ({email}), Birthdate: {birthdate}")
 
-    print(f"Total amount of fake data created: {len(fake_details_list)}")
+    logging.info(f"Total amount of fake data created: {len(fake_details_list)}")
 
-    fake_details_df = pd.DataFrame(fake_details_list)
-    return fake_details_df
+    # Extracting data to variables
+    names = [details["name"] for details in fake_details_list]
+    surnames = [details["surname"] for details in fake_details_list]
+    emails = [details["email"] for details in fake_details_list]
+    birthdates = [details["birthdate"] for details in fake_details_list]
+
+    return names, surnames, emails, birthdates
+
 
 # Usage example
-# fake_details_df = generate_fake_details(api_url='https://api.namefake.com', country='united-states', num=10, email_domain='johnsmith2222.sbs')
+api_url = API_URL
+num = 1
+email_domain = 'johnsmith2222.sbs'
+names, surnames, emails, birthdates = generate_fake_details(api_url, num, email_domain)
+# Now you have the data in the specified variables
+print("Names:", names)
+print("Surnames:", surnames)
+print("Emails:", emails)
+print("Birthdates:", birthdates)
