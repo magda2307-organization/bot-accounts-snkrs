@@ -9,6 +9,7 @@ from email.mime.multipart import MIMEMultipart
 import traceback
 import os
 import pandas as pd
+from fake_data_generator import generate_fake_details
 
 config_file_path = 'config.yaml'
 
