@@ -65,12 +65,3 @@ def generate_fake_details(api_url, country, name_format, num):
 
     return fake_details_df
 
-# Example usage:
-api_url = "http://api.name-fake.com"
-country = "english-united-states"
-name_format = "{name}_{surname}_{number}"
-num_fake_details = 10  # The total number of fake details, so it will generate 5 for each gender
-
-fake_details_df = generate_fake_details(api_url, country, name_format, num_fake_details)
-print("\nGenerated Fake Details:")
-print(fake_details_df)
