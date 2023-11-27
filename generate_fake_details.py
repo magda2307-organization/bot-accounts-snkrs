@@ -1,72 +1,74 @@
 import requests
 import pandas as pd
 from datetime import datetime, timedelta
-import os
+import json
+import random
+
+def get_name_data(api_url, country, gender, num_per_gender):
+    api_endpoint = f"{api_url}/{country}/{gender}/"
+    response = requests.get(api_endpoint, params={'number': num_per_gender})
+
+    if response.status_code == 200:
+        try:
+            name_data = json.loads(response.text)
+            if isinstance(name_data, list):
+                return name_data
+            else:
+                return [name_data]
+        except json.JSONDecodeError as e:
+            print(f"Error decoding API response as JSON: {e}")
+    else:
+        print(f"Error: Unable to fetch data for {gender} gender. Status Code: {response.status_code}")
+        return []
 
 def clean_name_surname(name_data):
-    """
-    Clean the name and surname to contain only basic alphabet characters.
+    if 'name' in name_data:
+        name_parts = name_data['name'].split()
+        cleaned_name = ''.join(filter(str.isalpha, name_parts[0]))
+        cleaned_surname = ''.join(filter(str.isalpha, name_parts[1]))
+        return cleaned_name.capitalize(), cleaned_surname.capitalize()
+    else:
+        print("Error: 'name' not found in name_data.")
+        return None, None
 
-    Args:
-    - name_data (dict): The name data obtained from the Fake Name Generator API.
-
-    Returns:
-    - tuple: Cleaned name and surname.
-    """
-    name_parts = name_data['name'].split()
-    cleaned_name = ''.join(filter(str.isalpha, name_parts[0]))
-    cleaned_surname = ''.join(filter(str.isalpha, name_parts[1]))
-    return cleaned_name.capitalize(), cleaned_surname.capitalize()
-
-def generate_fake_details(api_url, country, name_format, num):
-    """
-    Generate fake details using the Fake Name Generator API with an equal distribution of male and female.
-
-    Args:
-    - api_url (str): The base URL of the Fake Name Generator API.
-    - country (str): Country for the generated name (e.g., 'united-states').
-    - name_format (str): The format of the generated name (e.g., '{name}_{surname}_{number}').
-    - num (int): Number of fake details to generate.
-
-    Returns:
-    - pd.DataFrame: DataFrame containing fake details (name, surname, email, gender, birthdate).
-    """
+def generate_fake_details(api_url, country, num, email_domain):
     fake_details_list = []
 
-    # Calculate half of the total details for each gender
     num_per_gender = num // 2
 
-    for gender in ['male', 'female']:
-        # Generate fake details for the specified gender
-        api_endpoint = f"{api_url}/{country}/{gender}/"
-        response = requests.get(api_endpoint, params={'number': num_per_gender})
+    for _ in range(num):
+        # Randomly select gender for each entry
+        gender = random.choice(['male', 'female'])
+        name_data_list = get_name_data(api_url, country, gender, 1)
 
-        if response.status_code == 200:
-            name_data_list = response.json()
+        for name_data in name_data_list:
+            cleaned_name, cleaned_surname = clean_name_surname(name_data)
 
-            for idx, name_data in enumerate(name_data_list, start=1):
-                cleaned_name, cleaned_surname = clean_name_surname(name_data)
-                number = idx + (num_per_gender if gender == 'female' else 0)
+            if cleaned_name is None or cleaned_surname is None:
+                continue  # Skip this entry if cleaning fails
 
-                # Generate birthdate older than 21 years
-                birthdate = (datetime.now() - timedelta(days=365.25 * 21)).strftime('%d.%m.%Y')
+            random_days = random.randint(int(365.25 * 21), int(365.25 * (datetime.now().year - 1988)))
+            birthdate = (datetime.now() - timedelta(days=random_days)).strftime('%d.%m.%Y')
 
-                email = f"{cleaned_name.lower()}_{cleaned_surname.lower()}_{number}@johnsmith2222.sbs"
-                
-                # Append the generated details to the list
-                fake_details_list.append({
-                    "name": cleaned_name,
-                    "surname": cleaned_surname,
-                    "email": email,
-                    "gender": gender,
-                    "birthdate": birthdate,
-                })
+            # Introduce additional randomness in the email
+            random_number1 = random.randint(1, 999)
+            random_number2 = random.randint(1, 999)
+            email = f"{cleaned_name.lower()}_{random_number1}_{cleaned_surname.lower()}_{random_number2}@{email_domain}"
 
-                print(f"Fake details created: {cleaned_name} {cleaned_surname} ({email}), Gender: {gender}, Birthdate: {birthdate}")
+            fake_details_list.append({
+                "name": cleaned_name,
+                "surname": cleaned_surname,
+                "email": email,
+                "gender": gender,
+                "birthdate": birthdate,
+            })
+
+            print(f"Fake details created: {cleaned_name} {cleaned_surname} ({email}), Gender: {gender}, Birthdate: {birthdate}")
 
     print(f"Total amount of fake data created: {len(fake_details_list)}")
 
-    # Convert the list of dictionaries to a DataFrame
     fake_details_df = pd.DataFrame(fake_details_list)
-
     return fake_details_df
+
+# Usage example
+#fake_details_df = generate_fake_details(api_url='https://api.namefake.com', country='united-states', num=10, email_domain='johnsmith2222.sbs')
