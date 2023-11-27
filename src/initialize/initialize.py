@@ -7,8 +7,10 @@ def read_config(config_file_path):
         with open(config_file_path, 'r') as yaml_file:
             config_data = yaml.safe_load(yaml_file)
         return config_data
-    except Exception as e:
+    except FileNotFoundError:
         create_dummy_config(config_file_path)
+        raise ValueError(f"Configuration file not found. Created a dummy config at {config_file_path}")
+    except Exception as e:
         raise ValueError(f"Error reading configuration file: {e}")
 
 def create_dummy_config(config_file_path):
@@ -54,17 +56,21 @@ def initialize(config_file_path, config):
         proxies = read_proxies_from_file(proxy_file_path)
         config['PROXIES'] = proxies
 
+        # Update: Do not use data.yaml, generate fake details directly
         number_of_accounts = config.get('NUMBER_OF_ACCOUNTS_TO_BE_CREATED', 10)
         fake_details_df = generate_fake_details(
             api_url=config['API_URL'],
             country=config['COUNTRY'],
-            name_format=config['NAME_FORMAT'],
             num=number_of_accounts,
             email_domain=config['EMAIL_DOMAIN'],
         )
         print(f"{number_of_accounts} fake accounts created")
 
-    except Exception as e:
-        raise ValueError(f"Error reading configuration file: {e}")
+        # Remaining existing code goes here...
 
-    print(f"Configuration file loaded: {config_file_path}")
+    except Exception as e:
+        raise ValueError(f"Error initializing: {e}")
+
+    print(f"Initialization complete: {config_file_path}")
+
+# Additional existing code goes here...

@@ -8,17 +8,30 @@ def get_name_data(api_url, country, gender, num_per_gender):
     api_endpoint = f"{api_url}/{country}/{gender}/"
     response = requests.get(api_endpoint, params={'number': num_per_gender})
 
-    if response.status_code == 200:
+    try:
+        print(response.text)
+        response.raise_for_status()  # Raise an HTTPError for bad responses
+
         try:
-            name_data = json.loads(response.text)
+            name_data = response.json()
             if isinstance(name_data, list):
                 return name_data
             else:
                 return [name_data]
         except json.JSONDecodeError as e:
             print(f"Error decoding API response as JSON: {e}")
-    else:
-        print(f"Error: Unable to fetch data for {gender} gender. Status Code: {response.status_code}")
+            return []
+    except requests.exceptions.HTTPError as errh:
+        print(f"HTTP Error: {errh}")
+        return []
+    except requests.exceptions.ConnectionError as errc:
+        print(f"Error Connecting: {errc}")
+        return []
+    except requests.exceptions.Timeout as errt:
+        print(f"Timeout Error: {errt}")
+        return []
+    except requests.exceptions.RequestException as err:
+        print(f"Request Error: {err}")
         return []
 
 def clean_name_surname(name_data):
@@ -71,4 +84,4 @@ def generate_fake_details(api_url, country, num, email_domain):
     return fake_details_df
 
 # Usage example
-#fake_details_df = generate_fake_details(api_url='https://api.namefake.com', country='united-states', num=10, email_domain='johnsmith2222.sbs')
+# fake_details_df = generate_fake_details(api_url='https://api.namefake.com', country='united-states', num=10, email_domain='johnsmith2222.sbs')

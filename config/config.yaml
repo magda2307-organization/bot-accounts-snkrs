@@ -20,3 +20,4 @@ API_URL: http://api.name-fake.com
 COUNTRY: english-united-states
 NAME_FORMAT: "{name}_{surname}_{number}"
 NUMBER_OF_ACCOUNTS_TO_BE_CREATED: 10
+EMAIL_DOMAIN: "johnsmith2222.sbs"

@@ -11,12 +11,12 @@ try:
     config_data = init_module.read_config(CONFIG_FILE_PATH)
 
     # Pass config_file_path and config to the initialize function
-    init_module.initialize(CONFIG_FILE_PATH, config)
+    init_module.initialize(CONFIG_FILE_PATH, config.copy())
  
     print("Starting program execution...")
 
     # Use init_module to reference the module
-    init_module.initialize(config)
+    init_module.initialize(CONFIG_FILE_PATH, config)
  
     queue = feed_queue(config)
  
