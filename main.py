@@ -1,4 +1,4 @@
-import pandas as pd
+import yaml
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from datetime import datetime
@@ -8,150 +8,177 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import traceback
 import os
-import xlsxwriter
+import pandas as pd
 
-# CONFIG dictionary for constants and configuration values
-CONFIG = {
-    'CONFIG_FILE': 'CONFIG.xlsx',
-    'LOG_FILE': 'log.txt',
-    'DEBUG_LOG_LEVEL': 'DEBUG',
-    'INFO_LOG_LEVEL': 'INFO',
-    'MAX_RETRIES': 3,
-    'DELAY_BETWEEN_RETRIES': 2,
-    'PROXY_CHECK_WEBSITE': 'https://www.example.com',
-    'PROXY_RETRY_ON_ERROR': 3,
-    'DO_PRINT_DEBUG': True,  # Set this to False if you don't want debug logs in the report
-    'SENDER_EMAIL': 'your_email@gmail.com',
-    'SENDER_PASSWORD': 'your_email_password',
-    'RECEIVER_EMAIL': 'receiver_email@gmail.com',
-    'SMTP_SERVER': 'smtp.gmail.com',
-    'SMTP_PORT': 587,
-}
+config_file_path = 'config.yaml'
 
-# Initialization Step
-def initialize():
-    config_file_path = CONFIG['CONFIG_FILE']
-
-    # Check if the configuration file exists
-    if not os.path.isfile(config_file_path):
-        print("Configuration file not found. Creating a new one...")
-
-        # Create a sample DataFrame with the required columns
-        sample_data = {
-            'Username': ['user1', 'user2'],
-            'Password': ['pass1', 'pass2'],
-            'Email': ['user1@example.com', 'user2@example.com'],
-            'Proxy': ['http://proxy1:port1', 'http://proxy2:port2']
-        }
-        sample_df = pd.DataFrame(sample_data)
-
-        # Write the sample DataFrame to the configuration file
-        with pd.ExcelWriter(config_file_path, engine='xlsxwriter') as writer:
-            sample_df.to_excel(writer, index=False)
-
-        print(f"Configuration file created: {config_file_path}")
-
-    # Check if the configuration file has the required columns
+def read_config(config_file_path):
     try:
-        df_config = pd.read_excel(config_file_path)
-        required_columns = {'Username', 'Password', 'Email', 'Proxy'}
-        if not required_columns.issubset(df_config.columns):
-            raise ValueError("Invalid column names in the configuration file.")
-    except pd.errors.EmptyDataError:
-        raise ValueError("Configuration file is empty. Please add data to the CONFIG.xlsx file.")
+        with open(config_file_path, 'r') as yaml_file:
+            config_data = yaml.safe_load(yaml_file)
+        return config_data
+    except Exception as e:
+        create_dummy_config(config_file_path)
+        raise ValueError(f"Error reading configuration file: {e}")
+
+def create_dummy_config(config_file_path):
+    print("Configuration file not found. Creating a new one...")
+
+    sample_config = {
+        'CONFIG_FILE': 'CONFIG.xlsx',
+        'LOG_FILE': 'log.txt',
+        'DEBUG_LOG_LEVEL': 'DEBUG',
+        'INFO_LOG_LEVEL': 'INFO',
+        'MAX_RETRIES': 3,
+        'DELAY_BETWEEN_RETRIES': 2,
+        'PROXY_CHECK_WEBSITE': 'https://www.example.com',
+        'PROXY_RETRY_ON_ERROR': 3,
+        'DO_PRINT_DEBUG': True,
+        'SENDER_EMAIL': 'your_email@gmail.com',
+        'SENDER_PASSWORD': 'your_email_password',
+        'RECEIVER_EMAIL': 'receiver_email@gmail.com',
+        'SMTP_SERVER': 'smtp.gmail.com',
+        'SMTP_PORT': 587,
+        'EXAMPLE_PAGE_URL': 'https://example.com',
+        'PROXY_FILE': 'proxies.txt',  # Added the proxy file key
+        'DATA_FILE': 'data.yaml',
+        'PROCESS_STARTING_PAGE': 'https://example.com',  # Added the starting page for processing items
+    }
+
+    with open(config_file_path, 'w') as yaml_file:
+        yaml.dump(sample_config, yaml_file, default_flow_style=False)
+
+    print(f"Configuration file created: {config_file_path}")
+
+def read_proxies_from_file(file_path="proxies.txt"):
+    try:
+        with open(file_path, 'r') as file:
+            proxies = [line.strip() for line in file.readlines()]
+        return proxies
+    except Exception as e:
+        raise ValueError(f"Error reading proxies file: {e}")
+
+def get_proxy_for_item(item, proxies, last_used_proxy_index):
+    if not proxies:
+        return None
+
+    last_used_proxy_index = (last_used_proxy_index + 1) % len(proxies)
+    return proxies[last_used_proxy_index]
+
+def initialize(config):
+    try:
+        config_data = read_config(config_file_path)
+        required_keys = {'Username', 'Password', 'Email'}
+        if not set(config_data.keys()).issuperset(required_keys):
+            raise ValueError("Invalid keys in the configuration file.")
+
+        config.update(config_data)
+
+        # Read proxies from file and add to the config
+        proxy_file_path = config_data.get('PROXY_FILE', 'proxies.txt')
+        proxies = read_proxies_from_file(proxy_file_path)
+        config['PROXIES'] = proxies
+
     except Exception as e:
         raise ValueError(f"Error reading configuration file: {e}")
 
     print(f"Configuration file loaded: {config_file_path}")
 
-# Placeholder functions with retry mechanism
-def go_to_page(url, proxy=None, max_retries=CONFIG['MAX_RETRIES'], doPrintDebug=CONFIG['DO_PRINT_DEBUG']):
-    start_time = time.time()
-    for current_retry in range(max_retries):
-        try:
-            if doPrintDebug:
-                log(f"Attempting to check if proxy works: {proxy}", 'debug', CONFIG['DEBUG_LOG_LEVEL'], 'go_to_page')
-            
-            # Configure proxy
-            chrome_options = Options()
-            if proxy:
-                chrome_options.add_argument(f'--proxy-server={proxy}')
-            
-            # Initialize web driver with proxy configuration
-            driver = webdriver.Chrome(options=chrome_options)
-            
-            # Attempt to open a website to check if the proxy works
-            driver.get(CONFIG['PROXY_CHECK_WEBSITE'])
-            
-            if doPrintDebug:
-                log(f"Proxy check successful: {proxy}", 'debug', CONFIG['DEBUG_LOG_LEVEL'], 'go_to_page')
-            
-            # Continue with your Selenium implementation to navigate to the page
-            # Placeholder: Add your Selenium actions here
-            
-            end_time = time.time()
-            if doPrintDebug:
-                log(f"Time taken: {end_time - start_time:.2f} seconds", 'debug', CONFIG['DEBUG_LOG_LEVEL'], 'go_to_page')
-            
-            return True
-        except Exception as e:
-            if doPrintDebug:
-                log(f"Proxy check failed: {e}", 'debug', CONFIG['DEBUG_LOG_LEVEL'], 'go_to_page')
-                log(f"Retrying... Attempt {current_retry + 1}/{max_retries}", 'debug', CONFIG['DEBUG_LOG_LEVEL'], 'go_to_page')
-            time.sleep(CONFIG['DELAY_BETWEEN_RETRIES'])  # Add a delay between retries if needed
-    return False
+def feed_queue(config):
+    data_file_path = config.get('DATA_FILE', 'data.yaml')  # Use 'data.yaml' by default
 
-# Main Processing Loop
-def process_queue():
-    # Load user and proxy information
-    df_user = pd.read_excel(CONFIG['CONFIG_FILE'])
-    df_proxy = pd.read_excel(CONFIG['CONFIG_FILE'], sheet_name='Proxy')
-    df_combined = pd.concat([df_user, df_proxy], axis=1)
-    queue = df_combined.to_dict(orient='records')
+    # Check if the data file exists
+    if not os.path.isfile(data_file_path):
+        raise ValueError(f"Data file not found. Please create a valid {data_file_path} file.")
 
-    # Main processing loop
+    try:
+        with open(data_file_path, 'r') as yaml_file:
+            data = yaml.safe_load(yaml_file)
+
+        df_combined = pd.DataFrame(data)
+        queue = df_combined.to_dict(orient='records')
+        return queue
+
+    except Exception as e:
+        raise ValueError(f"Error reading data file: {e}")
+
+def process_queue(queue, config):
+    example_page_url = config.get('EXAMPLE_PAGE_URL', 'https://example.com')
+    starting_page = config.get('PROCESS_STARTING_PAGE', 'https://example.com')
+
+    proxies = config.get('PROXIES', [])
+    last_used_proxy_index = -1
+
     for idx, item in enumerate(queue, start=1):
         username = item['Username']
         password = item['Password']
         email = item['Email']
-        proxy = item.get('Proxy', '')  # Extract proxy from the config
 
-        # Use the proxy when navigating to the page
-        if go_to_page('https://example.com', proxy=proxy, doPrintDebug=True):
+        # Get a proxy for the current item
+        proxy = get_proxy_for_item(item, proxies, last_used_proxy_index)
+
+        # Log: Using proxy for the current item
+        print(f"Using proxy for item {idx}: {proxy}")
+
+        # Use the proxy when navigating to the starting page
+        if go_to_page(starting_page, proxy=proxy, doPrintDebug=True):
+            # Log: Successful navigation to the starting page with the current proxy
+            print(f"Successfully navigated to {starting_page} using proxy: {proxy}")
+
             # Placeholder: Add your processing functions here
             print(f"Processing item {idx}: {username}, {email}, {proxy}")
             # Placeholder: Add more processing steps as needed
 
+            # Update the last used proxy index
+            last_used_proxy_index = proxies.index(proxy)
+
     print("Processing complete.")
 
-# Function to log messages
-def log(message, log_type='info', log_level=CONFIG['INFO_LOG_LEVEL'], function_name=None, doPrintDebug=CONFIG['DO_PRINT_DEBUG']):
-    with open(CONFIG['LOG_FILE'], 'a') as log_file:
-        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        function_info = f" - {function_name}" if function_name else ""
-        log_file.write(f"[{timestamp}] [{log_level}] [{log_type.upper()}]{function_info} - {message}")
-        log_file.write("\n")
-        if doPrintDebug:
-            print(f"[{timestamp}] [{log_level}] [{log_type.upper()}]{function_info} - {message}")
+def go_to_page(url, proxy=None, doPrintDebug=False):
+    try:
+        options = webdriver.ChromeOptions()
 
-# Email function (placeholder)
-def send_email(report_filename):
-    # Placeholder: Add your email sending logic here
-    pass
+        if proxy:
+            options.add_argument(f'--proxy-server={proxy}')
 
-# Closing Step
-def close_process():
-    # Placeholder: Add any closing steps or resource cleanup here
-    pass
+        driver = webdriver.Chrome(options=options)
+        driver.get(url)
+
+        # Placeholder: Add additional logic as needed
+
+        return True  # Return True if the page navigation is successful
+
+    except Exception as e:
+        # Placeholder: Handle exceptions if needed
+        print(f"Error navigating to {url} with proxy {proxy}: {e}")
+        return False
+    finally:
+        if driver:
+            driver.quit()
+
+def end_program():
+    print("Program execution complete.")
 
 # Main Execution Flow
 try:
-    initialize()
-    process_queue()
-    # Placeholder: Add additional steps or functions if needed
-    # Example: send_email('report.txt')
-    # Example: close_process()
+    CONFIG_FILE_PATH = 'config.yaml'
+    config = read_config(CONFIG_FILE_PATH)
+    
+    # Log: Starting program execution
+    print("Starting program execution...")
+
+    initialize(config)
+    
+    queue = feed_queue(config)
+    
+    process_queue(queue, config)
+
 except Exception as e:
+    # Log: An error occurred
     print(f"An error occurred: {e}")
+    # Log: Detailed error traceback
+    traceback.print_exc()
+
 finally:
-    print("Program execution complete.")
+    # Log: Ending program execution
+    end_program()

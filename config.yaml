@@ -1,0 +1,16 @@
+CONFIG_FILE: CONFIG.xlsx
+DEBUG_LOG_LEVEL: DEBUG
+DELAY_BETWEEN_RETRIES: 2
+DO_PRINT_DEBUG: true
+EXAMPLE_PAGE_URL: https://example.com
+INFO_LOG_LEVEL: INFO
+LOG_FILE: log.txt
+MAX_RETRIES: 3
+PROXY_CHECK_WEBSITE: https://www.example.com
+PROXY_RETRY_ON_ERROR: 3
+RECEIVER_EMAIL: receiver_email@gmail.com
+SENDER_EMAIL: your_email@gmail.com
+SENDER_PASSWORD: your_email_password
+SMTP_PORT: 587
+SMTP_SERVER: smtp.gmail.com
+DATA_FILE: data.yaml
