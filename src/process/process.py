@@ -3,6 +3,7 @@ import pandas as pd
 from selenium import webdriver
 import yaml
 from src.proxy.proxy_utils import get_proxy_for_item
+from password_generator import generate_random_password
 
 def feed_queue(config):
     data_file_path = config.get('DATA_FILE', 'config/config.yaml')
@@ -29,9 +30,16 @@ def process_queue(queue, config):
     last_used_proxy_index = -1
 
     for idx, item in enumerate(queue, start=1):
-        username = item['Username']
-        password = item['Password']
-        email = item['Email']
+        username = item.get('Username', '')
+        email = item.get('Email', '')
+
+        # Generate a random password using your function
+        password = generate_random_password(length=12, use_numbers=True, use_special_chars=True)
+
+        # Add the generated password to the item
+        item['Password'] = password
+
+        # Placeholder: Add more processing steps as needed
 
         proxy = get_proxy_for_item(item, proxies, last_used_proxy_index)
 
