@@ -81,12 +81,12 @@ def generate_fake_details(api_url, num, email_domain):
 
 
 # Usage example
-api_url = API_URL
-num = 1
-email_domain = 'johnsmith2222.sbs'
-names, surnames, emails, birthdates = generate_fake_details(api_url, num, email_domain)
+#api_url = API_URL
+#num = 1
+#email_domain = 'johnsmith2222.sbs'
+#names, surnames, emails, birthdates = generate_fake_details(api_url, num, email_domain)
 # Now you have the data in the specified variables
-print("Names:", names)
-print("Surnames:", surnames)
-print("Emails:", emails)
-print("Birthdates:", birthdates)
+#print("Names:", names)
+#print("Surnames:", surnames)
+#print("Emails:", emails)
+#print("Birthdates:", birthdates)

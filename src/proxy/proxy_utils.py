@@ -1,7 +1,8 @@
-def read_proxies_from_file(file_path="proxies.txt"):
+def read_proxies_from_file(file_path="config/proxies.txt"):
     try:
         with open(file_path, 'r') as file:
-            proxies = [line.strip() for line in file.readlines()]
+            proxies = [line.strip().split(':') for line in file.readlines()]
+            proxies = [{'ip': proxy[0], 'port': proxy[1], 'username': proxy[2], 'password': proxy[3]} for proxy in proxies]
         return proxies
     except Exception as e:
         raise ValueError(f"Error reading proxies file: {e}")

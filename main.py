@@ -5,7 +5,7 @@ from src.process.process import feed_queue, process_queue, end_program
 CONFIG_FILE_PATH = 'config/config.yaml'
 
 try:
-    config = {}  # Provide an empty config dictionary or load it from somewhere
+    config = {}  
 
     # Call read_config to get the config data
     config_data = init_module.read_config(CONFIG_FILE_PATH)
@@ -15,11 +15,8 @@ try:
  
     print("Starting program execution...")
 
-    # Use init_module to reference the module
     init_module.initialize(CONFIG_FILE_PATH, config)
- 
     queue = feed_queue(config)
- 
     process_queue(queue, config)
 
 except Exception as e:

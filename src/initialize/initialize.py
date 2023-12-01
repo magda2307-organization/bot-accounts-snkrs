@@ -60,7 +60,6 @@ def initialize(config_file_path, config):
         number_of_accounts = config.get('NUMBER_OF_ACCOUNTS_TO_BE_CREATED', 10)
         fake_details_df = generate_fake_details(
             api_url=config['API_URL'],
-            country=config['COUNTRY'],
             num=number_of_accounts,
             email_domain=config['EMAIL_DOMAIN'],
         )
